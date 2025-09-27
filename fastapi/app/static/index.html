@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chat App</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: "Roboto", sans-serif;
+        background: linear-gradient(135deg, #1f1c2c, #928dab);
+        color: #fff;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      header {
+        background: rgba(0, 0, 0, 0.8);
+        padding: 20px;
+        text-align: center;
+        font-size: 24px;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+      }
+      .container {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 20px;
+        gap: 20px;
+      }
+      .settings {
+        display: flex;
+        gap: 10px;
+        background: rgba(255, 255, 255, 0.1);
+        padding: 15px;
+        border-radius: 10px;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+      }
+      .settings input {
+        flex: 1;
+        padding: 10px;
+        border: none;
+        border-radius: 5px;
+        font-size: 16px;
+        background: rgba(255, 255, 255, 0.2);
+        color: #fff;
+        outline: none;
+      }
+      .settings button {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        background: #ff6f61;
+        color: #fff;
+        font-size: 16px;
+        cursor: pointer;
+        transition: background 0.3s;
+      }
+      .settings button:hover {
+        background: #ff3b2f;
+      }
+      .chat-container {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        padding: 20px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+      }
+      #messages {
+        flex: 1;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        padding-right: 10px;
+        scrollbar-width: thin;
+        scrollbar-color: #ff6f61 transparent;
+      }
+      #messages::-webkit-scrollbar {
+        width: 8px;
+      }
+      #messages::-webkit-scrollbar-thumb {
+        background: #ff6f61;
+        border-radius: 10px;
+      }
+      .message {
+        display: flex;
+        flex-direction: column;
+        max-width: 70%;
+        padding: 10px;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.2);
+        color: #fff;
+        word-wrap: break-word;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      }
+      .message.own {
+        align-self: flex-end;
+        background: #ff6f61;
+      }
+      .message-meta {
+        font-size: 12px;
+        margin-bottom: 5px;
+        opacity: 0.8;
+      }
+      .input-container {
+        display: flex;
+        gap: 10px;
+        padding: 15px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+      }
+      .input-container input {
+        flex: 1;
+        padding: 10px;
+        border: none;
+        border-radius: 5px;
+        font-size: 16px;
+        background: rgba(255, 255, 255, 0.2);
+        color: #fff;
+        outline: none;
+      }
+      .input-container button {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        background: #ff6f61;
+        color: #fff;
+        font-size: 16px;
+        cursor: pointer;
+        transition: background 0.3s;
+      }
+      .input-container button:hover {
+        background: #ff3b2f;
+      }
+    </style>
+  </head>
+  <body>
+    <header>Chat App Futurista</header>
+    <div class="container">
+      <div class="settings">
+        <input id="room" placeholder="Sala (ex: geral)" />
+        <input id="username" placeholder="Seu nome" />
+        <button id="connectBtn">Conectar</button>
+      </div>
+      <div class="chat-container">
+        <div id="messages"></div>
+        <div class="input-container">
+          <input id="input" type="text" placeholder="Digite sua mensagem..." />
+          <button id="sendBtn">Enviar</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const $room = document.getElementById("room");
+      const $username = document.getElementById("username");
+      const $messages = document.getElementById("messages");
+      const $input = document.getElementById("input");
+      const $connectBtn = document.getElementById("connectBtn");
+      const $sendBtn = document.getElementById("sendBtn");
+
+      $room.value = localStorage.getItem("room") || "geral";
+      $username.value = localStorage.getItem("username") || "";
+
+      let ws = null;
+
+      function appendMessage(item) {
+        const messageDiv = document.createElement("div");
+        messageDiv.className = "message";
+        if (item.username === $username.value.trim()) {
+          messageDiv.classList.add("own");
+        }
+
+        const metaDiv = document.createElement("div");
+        metaDiv.className = "message-meta";
+        const when = new Date(item.created_at).toLocaleTimeString();
+        metaDiv.textContent = `${item.username} • ${when}`;
+
+        const bubbleDiv = document.createElement("div");
+        bubbleDiv.className = "message-bubble";
+        bubbleDiv.textContent = item.content;
+
+        messageDiv.appendChild(metaDiv);
+        messageDiv.appendChild(bubbleDiv);
+        $messages.appendChild(messageDiv);
+        $messages.scrollTop = $messages.scrollHeight;
+      }
+
+      function appendHistory(items) {
+        $messages.innerHTML = "";
+        items.forEach(appendMessage);
+      }
+
+      function connect() {
+        const room = ($room.value || "geral").trim();
+        const username = ($username.value || "anon").trim();
+        if (!room) return alert("Informe a sala");
+        if (!username) return alert("Informe o nome");
+
+        localStorage.setItem("room", room);
+        localStorage.setItem("username", username);
+
+        const wsProto = location.protocol === "https:" ? "wss" : "ws";
+        const url = `${wsProto}://${location.host}/ws/${encodeURIComponent(
+          room
+        )}`;
+        ws = new WebSocket(url);
+
+        ws.onmessage = (evt) => {
+          const data = JSON.parse(evt.data);
+          if (data.type === "history") {
+            appendHistory(data.items || []);
+          } else if (data.type === "message") {
+            appendMessage(data.item);
+          }
+        };
+
+        ws.onopen = () => console.log("WS conectado");
+        ws.onclose = () => console.log("WS desconectado");
+        ws.onerror = (e) => console.error("WS erro", e);
+      }
+
+      $connectBtn.addEventListener("click", () => {
+        if (ws) ws.close();
+        connect();
+      });
+
+      function sendMessage() {
+        const content = $input.value.trim();
+        if (!content || !ws || ws.readyState !== WebSocket.OPEN) return;
+        ws.send(JSON.stringify({ content, username: $username.value }));
+        $input.value = "";
+      }
+
+      $sendBtn.addEventListener("click", sendMessage);
+      $input.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") {
+          sendMessage();
+        }
+      });
+    </script>
+  </body>
+</html>
