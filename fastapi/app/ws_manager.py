@@ -1,7 +1,3 @@
-"""
-Module for managing WebSocket connections and broadcasting messages.
-"""
-
 from typing import List
 from fastapi import WebSocket
 

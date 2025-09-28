@@ -29,7 +29,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- DB helpers ---
+
 _client: Optional[AsyncIOMotorClient] = None
 
 
@@ -57,7 +57,6 @@ def serialize(doc: dict) -> dict:
     return d
 
 
-# --- WebSocket room manager ---
 class WSManager:
     def __init__(self):
         self.rooms: Dict[str, Set[WebSocket]] = {}
@@ -83,7 +82,6 @@ class WSManager:
 
 manager = WSManager()
 
-# --- Static client ---
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 
