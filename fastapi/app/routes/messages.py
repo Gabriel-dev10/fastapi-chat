@@ -8,8 +8,6 @@ from bson import ObjectId
 router = APIRouter()
 ws_manager = WSManager()
 
-
-
 @router.get("/messages", response_model=List[MessageOut])
 def read_messages():
     return get_messages()
