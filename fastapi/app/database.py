@@ -7,6 +7,3 @@ db = client[MONGO_DB]
 
 def get_messages():
     return list(db.messages.find())
-
-def save_message(message):
-    return db.messages.insert_one(message)
